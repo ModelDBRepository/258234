@@ -1,0 +1,136 @@
+# Two-Compartment Motoneuron Model
+# Sharmila Venugopal - svenugopal10@gmail.com
+# Cite: S Venugopal et al., J Neurophysiology, 2011
+
+# Ca concentration in micromoles/liter
+#
+# version for computing bifurcation diagrams
+#
+#soma equations
+
+dvs/dt=(Iramp-sgna*snaminf(vs)**3*snah*(vs-(vna+vrest))-sgca*scam**2*scah*(vs-(vca+vrest))-sgk*sn**4*(vs-(vk+vrest))-perkca*sgkca*(sca**p/(kd**p+sca**p))*(vs-(vk+vrest))-gl*(vs-(vl+vrest))+gc*(vd-vs)/parea)/cm
+dsnah/dt=(snahinf(vs)-snah)/snahtau(vs)
+dsn/dt=(sninf(vs)-sn)/sntau(vs)
+dscam/dt=(scaminf(vs)-scam)/camtau
+dscah/dt=(scahinf(vs)-scah)/cahtau
+dsca/dt=-f*alpha*sgca*scam**2*scah*(vs-(vca+vrest))-f*kca*sca
+
+#dendrite equations
+
+dvd/dt=(-dgcas*dcas*(vd-(vca+vrest))-pernap*gNaP*mnap*hnap*(Vd-(vna+vrest))-perkca*dgkca*(dca**p/(kd**p+dca**p))*(vd-(vk+vrest))-gl*(vd-(vl+vrest))+gc*(vs-vd)/(1.0-parea))/cm
+ddcas/dt=(dcasinf(vd)-dcas)/dcastau
+ddca/dt=-f*alpha2*dgcas*dcas*(vd-(vca+vrest))-f*kca*dca
+dmnap/dt=(minfnap(Vd)-mnap)/taunap
+dhnap/dt=(hinfnap(vd)-hnap)/naptau
+
+
+
+#
+# soma functions
+snaminf(vs)=1.0/(1.0+exp(-(vs-snamth)/snamslp))
+snahinf(vs)=1.0/(1.0+exp((vs-snahth)/snahslp))
+snahtau(vs)=snahc/(exp((vs-snahv)/snaha)+exp(-(vs-snahv)/snahb))
+sninf(vs)=1.0/(1.0+exp(-(vs-nth)/nslp))
+sntau(vs)=nc/(exp((vs-nv)/na)+exp(-(vs-nv)/nb))
+scaminf(vs)=1.0/(1.0+exp(-(vs-camth)/camslp))
+scahinf(vs)=1.0/(1.0+exp((vs-cahth)/cahslp))
+
+# dendrite functions
+dcasinf(vd)=1.0/(1.0+exp(-(vd-dcasth)/dcasslp))
+minfnap(Vd)=1/(1+exp(-(vd-thetamnap)/Kmnap))
+hinfnap(vd)=1/(1+exp((vd-thetahnap)/Khnap))
+
+
+# bifurcation parameter
+p iapp=0,itonic=0.5
+
+Iinh=gi*s*(vd-vi)
+gi=ggb+ggl
+p s=2, vi=-100
+p ggb=0.01,ggl=0.01
+
+# common parameters
+p vna=115.0,vk=-20.0,vl=0.0,vca=140.0,vrest=-60.0,cm=1.0,gl=0.51,
+p p=1,kd=0.2,f=0.01,kca=2.0,alpha=0.009
+
+# soma parameters
+p sgna=80.0,snamth=-35.0,snamslp=7.8,snahth=-55.0,snahslp=7.0
+p snahv=-50.0,snaha=15.0,snahb=16.0,snahc=30.0
+p sgk=100.0,nth=-28.0,nslp=12.0,nv=-40.0,na=40.0,nb=50.0,nc=7.0
+p sgca=14.0,camth=-30.0,camslp=5.0,camtau=4.0
+p cahth=-45.0,cahslp=5.0,cahtau=40.0
+#p sgkca=5.0
+p sgkca=6
+
+# dendrite parameters
+p dgcaf=0.3
+p dcasth=-39.0,dcasslp=7.0,dcastau=40.0
+p dgk=0.0
+
+# coupling parameters
+p gc=0.1,parea=0.1
+#p gc=0.08,parea=0.1
+
+# conductance percentage factors
+p perkca=1.0, perslca=1.0
+
+# conductances sensitive to SCI
+p dgkca=1.0
+p gnap=0.1
+p dgcas=0.25
+p gpratio=1.772
+p alpha2=0.009
+p percap=1
+p pernap=1
+#=================================================================================================
+#=================================================================================================
+#=================================================================================================
+#=================================================================================================
+#p Itonic=0	
+# Setting Itonic=0.5 helps AUTO find Hopf on the lower branch of S-shaped nullcline
+#=================================================================================================
+#=================================================================================================
+#=================================================================================================
+#=================================================================================================
+p taunap=40
+p naptau=1000
+p thetamnap=-48,Kmnap=3,thetahnap=-35,Khnap=6,taumxnap=10000,Tmnap=5000
+
+--------
+Iramp=offsetr+scaler*(t-tonr)*(heav(t-tonr)*heav(toffr-t))+2*scaler*(tswitchr-t)*(heav(t-tswitchr)*heav(toffr-t)) 
+par offsetr=0
+par scaler=0.005
+par tonr=0
+par toffr=10000
+par tswitchr=4000
+--------
+# soma initial conditions
+vs(0)=-57.34
+snah(0)=0.5829
+sn(0)=0.1239
+scam(0)=0.004199
+scah(0)=0.9219
+sca(0)=0.0001406
+# dendrite initial conditions
+vd(0)=-56.64
+dcas(0)=0.08493
+dca(0)=0.01724
+#
+
+aux I=Iramp
+aux SK=-perkca*dgkca*(dca**p/(kd**p+dca**p))*(vd-(vk+vrest))
+aux LCa=dgcas*dcas*(vd-(vca+vrest))
+
+#
+#xpp formatting
+@ TOTAL=10000,DT=0.05,
+@ MAXSTOR=600000,BOUNDS=600000,method=qualrk
+@ xlo=0,xhi=10000,ylo=-60,yhi=40,nplot=2,yp2=I
+done
+
+#Potential values of parameters that give a slightly bizzare behavior suggesting hyper-excitable dendrites and persistent plateau activation - Dec/04/2009
+#dgcas-0.3
+#gnap-0.15
+#dgkca-1.3
+#sgkca-25
+#taunap-200
